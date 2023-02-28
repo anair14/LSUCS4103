@@ -8,7 +8,6 @@ public class SudokuValidator {
     private static final int THREAD_POOL_SIZE = 3;
     private static final int SUBGRID_SIZE = 3;
     private static final int GRID_SIZE = SUBGRID_SIZE * SUBGRID_SIZE;
-    private static final int[] VALID_VALUES = {1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
