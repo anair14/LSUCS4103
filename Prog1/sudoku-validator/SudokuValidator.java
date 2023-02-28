@@ -12,7 +12,7 @@ public class SudokuValidator {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 1) {
-            System.err.println("[!] Usage: java SudokuValidator <input_file>")
+            System.err.println("[!] Usage: java SudokuValidator <input_file>");
             System.exit(1);
         }
         int[][] grid = readGridFromFile(args[0]);
@@ -41,10 +41,10 @@ public class SudokuValidator {
                 System.out.printf("[Thread %d] Column %d: Invalid%n", Thread.currentThread().getId(), i + 1);
             }
             if (SubgridValidator.isValid(grid, i)) {
-                System.out.printf("[Thread %d] Subgrid R%dC%d: Valid%n", Thread.currentThread().getId(), 
+                System.out.printf("[Thread %d] Subgrid R%dC%d: Valid%n", Thread.currentThread().getId(),
                     SUBGRID_SIZE * (i / SUBGRID_SIZE) + 1, SUBGRID_SIZE * (i % SUBGRID_SIZE) + 1);
             } else {
-                System.out.printf("[Thread %d] Subgrid R%dC%d: Invalid%n", Thread.currentThread.getId(),
+                System.out.printf("[Thread %d] Subgrid R%dC%d: Invalid%n", Thread.currentThread().getId(),
                     SUBGRID_SIZE * (i / SUBGRID_SIZE) + 1, SUBGRID_SIZE * (i % SUBGRID_SIZE) + 1);
             }
         }
@@ -65,7 +65,7 @@ public class SudokuValidator {
         int[][] grid = new int[GRID_SIZE][GRID_SIZE];
         try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             String line;
-            int row = 0
+            int row = 0;
             while ((line = reader.readLine()) != null) {
                 String[] values = line.split("\\s+");
                 if (values.length != GRID_SIZE) {
@@ -89,7 +89,7 @@ public class SudokuValidator {
 
     private static class RowValidator implements Runnable {
 
-        private final int[][] grid; 
+        private final int[][] grid;
         private final int row;
 
         RowValidator(int[][] grid, int row) {
@@ -160,8 +160,8 @@ public class SudokuValidator {
             int colOffset = SUBGRID_SIZE * (subgrid % SUBGRID_SIZE);
             for (int row = 0; row < SUBGRID_SIZE; row++) {
                 for (int col = 0; col < SUBGRID_SIZE; col++) {
-                    values {row * SUBGRID_SIZE + col} = grid[rowOffset + row][colOffset + col];
-                } 
+                    values[row * SUBGRID_SIZE + col]= grid[rowOffset + row][colOffset + col];
+                }
             }
             return containsAllValidValues(values);
         }
