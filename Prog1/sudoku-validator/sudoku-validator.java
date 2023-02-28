@@ -111,10 +111,140 @@ public class SudokuValidator {
     }
 
     private static class ColumnValidator implements Runnable {
-        // continue here.
+        private final int[][] grid;
+        private final int col;
+
+        ColumnValidator(int[][] grid, int col) {
+            this.grid = grid;
+            this.col = col;
+        }
+
+        @Override
+        public void run() {
+            if (!isValid(grid, col)) {
+                System.out.printf("[Thread %d] Column %d: Invalid%n", Thread.currentThread().getId(), col + 1);
+            }
+        }
+
+        static boolean isValid(int[][] grid, int col) {
+            int[] values = new int[GRID_SIZE];
+            for (int row = 0; row < GRID_SIZE; row++) {
+                values[row] = grid[row][col];
+            }
+            return containsAllValidValues(values);
+        }
     }
 
+    private static class SubgridValidator implements Runnable {
+        private final int[][] grid;
+        private final int subgrid;
 
+        SubgridValidator(int[][] grid, int subgrid) {
+            this.grid = grid;
+            this.subgrid = subgrid;
+        }
 
+        @Override
+        public void run() {
+            if (!isValid(grid, subgrid)) {
+                int row = SUBGRID_SIZE * (subgrid / SUBGRID_SIZE) + 1;
+                int col = SUBGRID_SIZE * (subgrid % SUBGRID_SIZE) + 1;
+                System.out.printf("[Thread %d] Subgrid R%dC%d: Invalid%n", Thread.currentThread().getId(), row, col);
+            }
+
+        }
+
+        static boolean isValid(int[][] grid, int subgrid) {
+            int[] values = new int[GRID_SIZE];
+            int rowOffset = SUBGRID_SIZE * (subgrid / SUBGRID_SIZE);
+            int colOffset = SUBGRID_SIZE * (subgrid % SUBGRID_SIZE);
+            for (int row = 0; row < SUBGRID_SIZE; row++) {
+                for (int col = 0; col < SUBGRID_SIZE; col++) {
+                    values {row * SUBGRID_SIZE + col} = grid[rowOffset + row][colOffset + col];
+                } 
+            }
+            return containsAllValidValues(values);
+        }
+
+    }
+
+    private static boolean containsAllValidValues(int[] values) {
+        boolean[] present = new boolean[GRID_SIZE];
+        for (int value : values) {
+            present[value - 1] = true;
+        for (boolean b : present) {
+            if (!b) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            System.err.println("[!] Usage: java sudoku-validator input-file");
+            System.exit(1);
+        }
+
+        int[][];
+        try {
+            grid = readGrid(args[0]);
+        } catch (IOException e) {
+            System.err.println("[!] Error reading input file: " + e.getMessage());
+            System.exit(1);
+            return;
+        }
+
+        ExecutorService executor = Executor.newFixedThreadPool(NUM_THREADS);
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            executor.execute(new RowValidator(grid, i));
+            executor.execute(new ColumnValidator(grid, i));
+        }
+
+        for (int i = 0; i < NUM_THREADS - 2; i++) {
+            executor.execute(new SubgridValidator(grid, i));
+        }
+
+        executor.shutdown();
+
+        try {
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+            System.err.println("Thread interrupted while waiting for validation to complete");
+            System.exit(1);
+            return;
+        }
+
+        int validRows = 0;
+        int validColumns = 0;
+        int validSubgrids = 0
+
+        for (int i = 0; i < GRID_SIZE; i++) {
+            if (RowValidator.isValid(grid, i)) {
+                validRows++;
+            }
+
+            if (ColumnValidator.isValid(grid, i)) {
+                validColumns++;
+            }
+        }
+
+        for (int i = 0; i < NUM_THREADS - 2; i++) {
+            if (SubgridValidator.isValid(grid, i)) {
+                validSubgrids++;
+            }
+        }
+
+        System.out.printf("Valid rows: %d%n", validRows);
+        System.out.printf("Valid columns: %d%n", validColumns);
+        System.out.printf("Valid subgrids: %d%n", validSubgrids);
+
+        if (validRows == GRID_SIZE && validColumns == GRID_SIZE && validSubgrids == NUM_THREADS - 2) {
+            System.out.println("This sudoku solution is: Valid");
+        } else {
+            System.out.println("This sudoku solution is: Invalid");
+        }
+    }
     
 } // eof
