@@ -169,7 +169,9 @@ public class SudokuValidator {
 
     private static boolean containsAllValidValues(int[] values) {
         boolean[] present = new boolean[GRID_SIZE];
-        for (int value : values) present[value - 1] = true;
+        for (int value : values) {
+            present[value - 1] = true;
+        }
         for (boolean b : present) {
             if (!b) {
                 return false;
