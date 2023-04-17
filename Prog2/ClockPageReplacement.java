@@ -1,83 +1,92 @@
-package Prog2;
+package Prog2.Clock;
 
-import java.util.*;
 import java.io.*;
+import java.util.*;
 
-public class ClockPageReplacement {
-    public static void main(String[] args) throws IOException {
-        int numPageFrames = Integer.parseInt(args[0]);
-        int timeSwapIn = Integer.parseInt(args[1]);
-        int timeSwapOut = Integer.parseInt(args[2]);
+public class Clock {
+    public static void main(String[] args) throws Exception {
+        if (args.length != 5) {
+            System.out.println("Usage: java Clock <memsize> <t1> <t2> <inputfile> <outputfile>");
+            System.exit(0);
+        }
+        int memSize = Integer.parseInt(args[0]);
+        int t1 = Integer.parseInt(args[1]);
+        int t2 = Integer.parseInt(args[2]);
         String inputFile = args[3];
         String outputFile = args[4];
 
-        List<Integer> pageReferences = new ArrayList<>();
-        BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+        BufferedReader br = new BufferedReader(new FileReader(inputFile));
+        BufferedWriter bw = new BufferedWriter(new FileWriter(outputFile));
+
+        int time = 0;
+        int fault = 0;
+        int count = 0;
+
+        ArrayList<Integer> memory = new ArrayList<Integer>();
+        ArrayList<Boolean> refbit = new ArrayList<Boolean>();
+
+        for (int i = 0; i < memSize; i++) {
+            memory.add(-1);
+            refbit.add(false);
+        }
+
         String line;
-        while ((line = reader.readLine()) != null) {
-            pageReferences.add(Integer.parseInt(line.trim()));
-        }
-        reader.close();
+        while ((line = br.readLine()) != null) {
+            StringTokenizer st = new StringTokenizer(line);
+            String type = st.nextToken();
+            int pageNum = Integer.parseInt(st.nextToken());
 
-        List<Integer> memory = new ArrayList<>();
-        List<Boolean> referenced = new ArrayList<>();
-        List<Boolean> modified = new ArrayList<>();
-        int pointer = 0;
-        int pageFaults = 0;
-        int swapInCosts = 0;
-        int swapOutCosts = 0;
-        BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
-        for (int pageReference : pageReferences) {
-            int index = memory.indexOf(pageReference);
-            if (index == -1) {
-                while (referenced.get(pointer)) {
-                    referenced.set(pointer, false);
-                    pointer = (pointer + 1) % numPageFrames;
-                }
-                if (memory.size() < numPageFrames) {
-                    memory.add(pageReference);
-                    referenced.add(true);
-                    modified.add(false);
-                    swapInCosts += timeSwapIn;
-                } else {
-                    index = pointer;
-                    while (modified.get(index)) {
-                        modified.set(index, false);
-                        referenced.set(index, false);
-                        pointer = (pointer + 1) % numPageFrames;
-                        index = pointer;
-                    }
-                    swapOutCosts += timeSwapOut;
-                    memory.set(index, pageReference);
-                    referenced.set(index, true);
-                    modified.set(index, false);
-                    swapInCosts += timeSwapIn;
-                }
-                pageFaults++;
-            } else {
-                referenced.set(index, true);
-            }
-            writer.write(pageReference + " ");
+            bw.write(String.format("%d: %-3s %d  [", time, type, pageNum));
+            boolean found = false;
+
             for (int i = 0; i < memory.size(); i++) {
-                writer.write(memory.get(i) + " ");
-                if (referenced.get(i)) {
-                    writer.write("R");
-                } else {
-                    writer.write("-");
-                }
-                if (modified.get(i)) {
-                    writer.write("M ");
-                } else {
-                    writer.write("- ");
+                if (memory.get(i) == pageNum) {
+                    found = true;
+                    refbit.set(i, true);
+                    break;
                 }
             }
-            writer.write("\n");
-        }
-        writer.close();
 
-        System.out.println("Number of page faults: " + pageFaults);
-        System.out.println("Time cost for swap-in: " + swapInCosts);
-        System.out.println("Time cost for swap-out: " + swapOutCosts);
+            if (!found) {
+                fault++;
+                bw.write("F");
+                while (true) {
+                    if (refbit.get(count)) {
+                        refbit.set(count, false);
+                    } else {
+                        if (memory.get(count) >= 0) {
+                            bw.write("S");
+                        }
+                        memory.set(count, pageNum);
+                        refbit.set(count, true);
+                        count = (count + 1) % memSize;
+                        break;
+                    }
+                    count = (count + 1) % memSize;
+                }
+            } else {
+                bw.write(" ");
+            }
+
+            for (int i = 0; i < memory.size(); i++) {
+                if (memory.get(i) == -1) {
+                    bw.write("* ");
+                } else {
+                    bw.write(memory.get(i) + " ");
+                }
+            }
+
+            bw.write("]");
+            bw.newLine();
+            time += t1;
+        }
+
+        bw.write("Number of faults: " + fault);
+        bw.newLine();
+        bw.write("Time elapsed: " + time);
+        bw.newLine();
+
+        br.close();
+        bw.close();
     }
 }
-
